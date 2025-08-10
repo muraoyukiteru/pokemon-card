@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/deck.mjs": {
+      "runtime": "nodejs22.x",
+      "memory": 1536,
+      "maxDuration": 20,
+      "includeFiles": [
+        "node_modules/@sparticuz/chromium/bin/**",
+        "node_modules/@sparticuz/chromium/lib/**"
+      ]
+    }
+  }
+}
