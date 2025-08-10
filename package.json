@@ -1,0 +1,9 @@
+{
+  "name": "pokemon-deck-scraper",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@sparticuz/chromium": "^123.0.0",
+    "puppeteer-core": "^22.10.0"
+  }
+}

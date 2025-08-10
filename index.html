@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deck Code → A4 3×3 Sheets (63×88mm)</title>
+  <style>
+    :root{ --cell-w:63mm; --cell-h:88mm; --gap:0mm; --grid-w:calc(var(--cell-w)*3); --grid-h:calc(var(--cell-h)*3); --guide:1.2pt dashed #111; }
+    *{ box-sizing:border-box; } html,body{ height:100%; margin:0; }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic UI','Meiryo',sans-serif; background:#f5f7fb; color:#111; }
+    header{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #e5e7eb; }
+    .toolbar{ max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn{ appearance:none; background:#111; color:#fff; border:none; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer; }
+    .btn.secondary{ background:#e5e7eb; color:#111; }
+    .field{ display:flex; align-items:center; gap:8px; padding:6px 10px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; }
+    main{ max-width:1100px; margin:18px auto 80px; padding:0 16px; }
+    .a4-wrap{ display:grid; place-items:center; gap:22px; }
+    .a4{ width:min(96vw, calc(96vh * (210/297))); aspect-ratio:210/297; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.08); border-radius:6px; position:relative; overflow:hidden; }
+    .sheet{ position:absolute; left:50%; top:50%; width:var(--grid-w); height:var(--grid-h); transform:translate(-50%, -50%); display:grid; grid-template-columns: repeat(3, var(--cell-w)); grid-template-rows: repeat(3, var(--cell-h)); gap:var(--gap); }
+    .sheet::before{ content:""; position:absolute; inset:0; border:var(--guide); pointer-events:none; }
+    .cell{ width:var(--cell-w); height:var(--cell-h); background:#fff; overflow:hidden; }
+    .cell img{ width:100%; height:100%; display:block; object-fit:contain; background:#fff; }
+    footer{ text-align:center; color:#6b7280; font-size:12px; padding:24px; }
+    @page { size: A4 portrait; margin: 0; }
+    @media print{ body{ background:#fff; } header, footer{ display:none; } .a4{ width:210mm; height:297mm; box-shadow:none; border-radius:0; } .a4 + .a4{ page-break-before: always; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="toolbar" role="toolbar" aria-label="Controls">
+      <label class="field" title="デッキコード例: ggnNQ9-cFqwyn-NLLn6Q">
+        <span>デッキコード</span>
+        <input id="deckCode" type="text" placeholder="例: ggnNQ9-cFqwyn-NLLn6Q" />
+      </label>
+      <button class="btn" id="fetchBtn">カード画像を取得</button>
+      <button class="btn secondary" id="printBtn" onclick="window.print()">🖨️ 印刷</button>
+      <label class="field" title="収まり方">
+        <span>フィット</span>
+        <select id="fitMode">
+          <option value="contain" selected>切り抜きなし（余白あり）</option>
+          <option value="cover">全面優先（はみ出しカット）</option>
+        </select>
+      </label>
+      <label class="field" title="同じ画像URLは1回だけ使う">
+        <input id="dedupe" type="checkbox" checked />重複画像をまとめる
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section style="margin:0 0 12px 0; font-size:12px; color:#6b7280;">
+      <p>背景は白のA4。中央に 63×88mm の3×3（余白0、枠線なし）を配置。各ページ外周に点線ガイド。デッキコードからカード画像（JPEG）を取得し、9枚ごとにページを増やします。9枚に満たない最後のページは空白セルを残します。</p>
+    </section>
+    <div id="pages" class="a4-wrap"></div>
+  </main>
+
+  <footer>フロントはAPIを呼ぶだけ。API_BASEをあなたのVercel URLに変えて使ってください。</footer>
+
+  <script>
+    // ▼ ここを書き換えてください：あなたのVercel URL（末尾スラッシュなし）
+    // 例: const API_BASE = 'https://your-app.vercel.app';
+    const API_BASE = '';
+
+    const PAGES = document.getElementById('pages');
+    const CODE = document.getElementById('deckCode');
+    const FETCH_BTN = document.getElementById('fetchBtn');
+    const FIT = document.getElementById('fitMode');
+    const DEDUPE = document.getElementById('dedupe');
+
+    function makeSheet(images){
+      const a4 = document.createElement('div'); a4.className = 'a4';
+      const sheet = document.createElement('div'); sheet.className = 'sheet';
+      for(let i=0;i<9;i++){
+        const cell = document.createElement('div'); cell.className = 'cell';
+        const img = document.createElement('img'); img.alt = String(i+1); img.style.objectFit = FIT.value;
+        if(images[i]) img.src = images[i];
+        cell.appendChild(img); sheet.appendChild(cell);
+      }
+      a4.appendChild(sheet); return a4;
+    }
+
+    function renderPages(urls){
+      PAGES.innerHTML = '';
+      if(urls.length === 0){ PAGES.appendChild(makeSheet([])); return; }
+      for(let i=0;i<urls.length; i+=9){ PAGES.appendChild(makeSheet(urls.slice(i, i+9))); }
+    }
+
+    FIT.addEventListener('change', ()=>{
+      PAGES.querySelectorAll('img').forEach(img => img.style.objectFit = FIT.value);
+    });
+
+    async function handleFetch(){
+      const code = (CODE.value || '').trim();
+      if(!code){ alert('デッキコードを入力してください。'); return; }
+      if(!API_BASE){ alert('index.html 内の API_BASE をあなたの Vercel URL に変更してください。'); return; }
+      try{
+        FETCH_BTN.disabled = true; FETCH_BTN.textContent = '取得中…';
+        const r = await fetch(`${API_BASE}/api/deck?code=${encodeURIComponent(code)}`);
+        if(!r.ok) throw new Error('API error '+r.status);
+        const data = await r.json();
+        let urls = data.images || [];
+        if(DEDUPE.checked){ urls = Array.from(new Set(urls)); }
+        renderPages(urls);
+      }catch(e){
+        console.error(e);
+        alert('カード画像の取得に失敗しました。時間をおいて再試行してください。');
+      }finally{
+        FETCH_BTN.disabled = false; FETCH_BTN.textContent = 'カード画像を取得';
+      }
+    }
+    FETCH_BTN.addEventListener('click', handleFetch);
+  </script>
+</body>
+</html>
