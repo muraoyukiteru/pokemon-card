@@ -1,12 +1,14 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.mjs", "use": "@vercel/node@3.0.0" }
-  ],
-  "functions": {
-    "api/*.mjs": {
-      "includeFiles": "node_modules/@sparticuz/chromium/**",
-      "maxDuration": 20
+    {
+      "src": "api/*.mjs",
+      "use": "@vercel/node@3.0.0",
+      "config": {
+        "includeFiles": "node_modules/@sparticuz/chromium/**",
+        "maxDuration": 20,
+        "memory": 1536
+      }
     }
-  }
+  ]
 }
