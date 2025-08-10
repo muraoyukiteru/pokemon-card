@@ -40,6 +40,7 @@ export default async function handler(req, res) {
       executablePath,
       headless: chromium.headless,
       ignoreHTTPSErrors: true,
+      env: { ...process.env, ...(chromium.env || {}) } // ★これでLD_LIBRARY_PATH等が渡る
     });
 
     const page = await browser.newPage();
