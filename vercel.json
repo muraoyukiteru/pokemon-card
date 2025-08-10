@@ -1,9 +1,10 @@
 {
+  "version": 2,
   "functions": {
-    "api/*.mjs": {
-      "runtime": "nodejs20.x",
+    "api/deck.mjs": {
+      "runtime": "nodejs22.x",
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 10
     }
   }
 }
