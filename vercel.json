@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/*.mjs",
+      "src": "api/**",
       "use": "@vercel/node@3.0.0",
       "config": {
         "includeFiles": "node_modules/@sparticuz/chromium/**",
