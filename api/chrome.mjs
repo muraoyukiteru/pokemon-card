@@ -9,7 +9,6 @@ export default async function handler(req, res) {
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
       ignoreHTTPSErrors: true,
-      // ★ これが大事：Sparticuzが提供するLD_LIBRARY_PATHなどを渡す
       env: { ...process.env, ...(chromium.env || {}) }
     });
     const page = await browser.newPage();
